@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: drupal8-site-install
+  annotations:
+    openshift.io/display-name: "Drupal 8 Site Install"
+    description: "Creates route and performs a drupal site-install into drupal-app"
+    iconClass: "icon-drupal"
+    tags: "drupal,php"
+message: >-
+  Your site is located at ${SITE}.cloud.las.iastate.edu. 
+  Admin password set to ${ADMINPASSWORD}
+objects:
+- apiVersion: v1
+  kind: Route
+  metadata:
+    creationTimestamp: null
+    name:  ${SITE}
+  spec:
+    host: ${SITE}.cloud.las.iastate.edu
+    port:
+      targetPort: 8080-tcp
+    to:
+      kind: Service
+      name: drupal8-app
+      weight: 100
+    wildcardPolicy: None
+- apiVersion: batch/v1
+  kind: Job
+  metadata:
+    name: drupal8-site-install-job-${SITE}
+  spec:
+    parallelism: 1    
+    completions: 1    
+    template:         
+      metadata:
+        name: drupal8-site-install-job
+      spec:
+        containers:
+          - name: drupal8-site-install-job
+            image: 172.30.177.59:5000/drupal8/drupal8-site-install-app
+            volumeMounts:
+              - mountPath: /mnt
+                name: volume-drupal8-sites
+            env:
+              - name: RUNEXEC
+                value: GO
+              - name: SITE
+                value: ${SITE}
+              - name: DRUPALADMINPASSWORD
+                value: ${ADMINPASSWORD}
+              - name: KEEPRUNNING
+        volumes:
+          - name: volume-drupal8-sites
+            persistentVolumeClaim:
+              claimName: gluster-claim-drupal8-prebind
+        restartPolicy: Never 
+parameters:
+  - name: SITE
+    displayName: Site Identifyer
+    description: >-
+      Unique Identifyer for the site like netid (all lowercase). Installation will fail 
+      if database exists with this name.
+    value:
+    required: true 
+  - name: ADMINPASSWORD
+    displayName: Drupal Admin Password
+    description: Password used for admin authentication
+    from: '[A-Z0-9]{12}'
+    generate: expression
+        
