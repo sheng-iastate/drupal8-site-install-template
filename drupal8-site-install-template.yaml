@@ -57,9 +57,9 @@ objects:
         restartPolicy: Never 
 parameters:
   - name: SITE
-    displayName: Site Identifyer
+    displayName: Site Identifier
     description: >-
-      Unique Identifyer for the site like netid (all lowercase). Installation will fail 
+      Unique Identifier for the site like netid (all lowercase). Installation will fail 
       if database exists with this name.
     value:
     required: true 
